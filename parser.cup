@@ -1,0 +1,46 @@
+import java_cup.runtime.*;
+
+parser code {:
+
+	public void report_error(String message,Object info){
+
+	}
+
+	public void report_fatal_error(String message,Object info){
+	 report_error(message,info);
+	 System.exit(1);
+	}
+
+:};
+
+/*----Declaration of Terminal e NonTerminal----*/
+
+terminal QUESTION,EQUAL,DIV,MIN,MAX,XML,VERSION,ENCODING,PROGRAM,FOR,RUNG,SECTION1,SECTION2,CONTACT,FROM,TO,PORT,TYPE,COIL;
+terminal Integer NUM,ID,TYPE,ARDUINO_MODEL;
+terminal String VERSION,ENCODING;
+
+non terminal Object G,F,E,D,C,B,A,S
+non terminal Integer I,J,L,M,Q;
+non terminal String N,P;
+
+/*Grammar Section*/
+S ::=	A 
+		|
+ 		B;
+A ::= MIN QUESTION XML VERSION EQUAL N ENCODING EQUAL P QUESTION MAX B;
+B ::= MIN PROGRAM FOR EQUAL Q MAX C MIN DIV PROGRAM MAX
+C ::= MIN RUNG MAX E MIN DIV RUNG MAX D
+D ::= MIN RUNG MAX E MIN DIV RUNG MAX D
+D ::= EPSILON
+E ::= MIN SECTION1 MAX F MIN DIV SECTION1 MAX MIN SECTION2 MAX G MIN DIV SECTION2 MAX
+F ::= MIN CONTACT FROM EQUAL I TO EQUAL J PORT EQUAL L TYPE EQUAL M DIV MAX
+F ::= EPSILON
+G ::= MAX COIL PORT EQUAL L TYPE EQUAL M DIV MAX
+I ::= NUM
+J ::= NUM
+L ::= ID
+N ::= VERSION
+P ::= ENCODING
+Q ::= ARDUINO_MODEL  
+
+
