@@ -1,0 +1,67 @@
+import java_cup.runtime.*;
+
+parser code {:
+
+	public void report_error(String message,Object info){
+		System.out.println("Si e' verificato un errore!");
+	}
+
+	public void report_fatal_error(String message,Object info){
+	 report_error(message,info);
+	 System.exit(1);
+	}
+
+:};
+
+/*----Declaration of Terminal e NonTerminal----*/
+
+terminal QUESTION,EQUAL,DIV,MIN,MAX,XML,PROGRAM,FOR,RUNG,SECTION1,SECTION2,CONTACT,FROM,TO,PORT,COIL,TYPE;
+/*terminal Integer NUM;*/
+terminal String VERSION,ENCODING,NUM;
+
+non terminal Object G,F,E,D,B,A,S,K;
+/*non terminal Integer I;*/
+non terminal String N,P,I;
+
+/*precedence left MIN,RUNG,MAX,DIV;*/
+
+
+/*Grammar Section*/
+S  ::= A 
+{:System.out.println("RIDUCO PER S");:};
+
+/*K  ::=	A 
+		|
+ 		B
+{:System.out.println("RIDUCO PER K");:};*/
+
+A ::= MIN QUESTION XML VERSION EQUAL N ENCODING EQUAL P QUESTION MAX B
+{:System.out.println("RIDUCO PER A");:}; 
+
+B ::= MIN PROGRAM FOR EQUAL I MAX D MIN DIV PROGRAM MAX
+{:System.out.println("RIDUCO PER B");:};
+
+D ::= D MIN RUNG MAX E MIN DIV RUNG MAX
+{:System.out.println("RIDUCO PER D");:};
+
+D ::=
+{:System.out.println("RIDUCO PER DEpsilon");:};
+
+E ::= MIN SECTION1 MAX F MIN DIV SECTION1 MAX MIN SECTION2 MAX G MIN DIV SECTION2 MAX
+{:System.out.println("RIDUCO PER E");:};
+
+F ::= F MIN CONTACT FROM EQUAL I TO EQUAL I PORT EQUAL I TYPE EQUAL I DIV MAX
+{:System.out.println("RIDUCO PER F");:};
+
+F ::=
+{:System.out.println("RIDUCO PER FEpsilon");:};
+
+G ::= MIN COIL PORT EQUAL I TYPE EQUAL I DIV MAX
+{:System.out.println("RIDUCO PER G");:};
+
+
+N ::= VERSION {:System.out.println("RIDUCO PER N");:};
+I ::= NUM {:System.out.println("RIDUCO PER I");:};
+P ::= ENCODING {:System.out.println("RIDUCO PER P");:};
+
+
