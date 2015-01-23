@@ -1,9 +1,34 @@
 import java_cup.runtime.*;
+import simduino.Coil;
+import simduino.Contact;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Iterator;
+
+
 
 parser code {:
 
+	public final String PORT_IS_INPUT_OR_OUTPUT="Port is only input or output";
+
+    private HashMap <Integer,Contact>tableInputPort=new HashMap<>();
+    private HashMap <Integer,Coil>tableOutputPort=new HashMap<>();
+
+    public HashMap getTableInput(){
+    	return tableInputPort;
+    }
+
+    public HashMap getTableOutput(){
+    	return tableOutputPort;
+    }
+
 	public void report_error(String message,Object info){
 		System.out.println("Si e' verificato un errore!");
+	}
+
+	public void handleError(String message){
+	 System.out.println(message);
+	 System.exit(1);
 	}
 
 	public void report_fatal_error(String message,Object info){
@@ -11,57 +36,105 @@ parser code {:
 	 System.exit(1);
 	}
 
+	public void user_init() {
+
+	}
+
 :};
+
+
 
 /*----Declaration of Terminal e NonTerminal----*/
 
 terminal QUESTION,EQUAL,DIV,MIN,MAX,XML,PROGRAM,FOR,RUNG,SECTION1,SECTION2,CONTACT,FROM,TO,PORT,COIL,TYPE;
-/*terminal Integer NUM;*/
-terminal String VERSION,ENCODING,NUM;
+terminal Integer NUM;
+terminal String VERSION,ENCODING;
 
-non terminal Object G,F,E,D,B,A,S,K;
-/*non terminal Integer I;*/
-non terminal String N,P,I;
-
+non terminal Object G,F,E,D,B,A,S;
+non terminal Integer I;
+non terminal String N,P;
+start with S;
 /*precedence left MIN,RUNG,MAX,DIV;*/
 
 
 /*Grammar Section*/
 S  ::= A 
-{:System.out.println("RIDUCO PER S");:};
+{:
+    Iterator it;
 
-/*K  ::=	A 
-		|
- 		B
-{:System.out.println("RIDUCO PER K");:};*/
+    it = parser.getTableInput().entrySet().iterator();
+    while (it.hasNext()) {
+        Map.Entry pairs = (Map.Entry)it.next();
+        int i=(int)pairs.getKey();
+        System.out.println("int pin"+i+"="+i+";");
+        System.out.println("int var"+i+"=0;");
+    }
+
+
+    it = parser.getTableInput().entrySet().iterator();
+    System.out.println("void setup(){");
+    while (it.hasNext()) {
+		Map.Entry pairs = (Map.Entry)it.next();
+        int i=(int)pairs.getKey();
+        System.out.println("	pinMode("+"pin"+i+","+"INPUT"+");");
+	}
+	it = parser.getTableOutput().entrySet().iterator();
+	while (it.hasNext()) {
+		Map.Entry pairs = (Map.Entry)it.next();
+        int i=(int)pairs.getKey();
+        System.out.println("	pinMode("+"pin"+i+","+"OUTPUT"+");");
+	}
+	System.out.println("}");
+
+
+:};
 
 A ::= MIN QUESTION XML VERSION EQUAL N ENCODING EQUAL P QUESTION MAX B
-{:System.out.println("RIDUCO PER A");:}; 
+{::}; 
 
 B ::= MIN PROGRAM FOR EQUAL I MAX D MIN DIV PROGRAM MAX
-{:System.out.println("RIDUCO PER B");:};
+{::};
 
 D ::= D MIN RUNG MAX E MIN DIV RUNG MAX
-{:System.out.println("RIDUCO PER D");:};
+{::};
 
 D ::=
-{:System.out.println("RIDUCO PER DEpsilon");:};
+{: :};
 
 E ::= MIN SECTION1 MAX F MIN DIV SECTION1 MAX MIN SECTION2 MAX G MIN DIV SECTION2 MAX
-{:System.out.println("RIDUCO PER E");:};
+{::};
 
-F ::= F MIN CONTACT FROM EQUAL I TO EQUAL I PORT EQUAL I TYPE EQUAL I DIV MAX
-{:System.out.println("RIDUCO PER F");:};
+F ::= F MIN CONTACT FROM EQUAL I:from TO EQUAL I:to PORT EQUAL I:port TYPE EQUAL I:type DIV MAX
+{:
+ 	Contact contact=new Contact(from,to,port,type);
+	if(parser.getTableOutput().containsKey(port))
+	 parser.handleError(parser.PORT_IS_INPUT_OR_OUTPUT);
+	else{
+	 if(!parser.getTableInput().containsKey(port)){
+	 	parser.getTableInput().put(contact.getPort(),contact);
+	 }
+	}
+:};
 
 F ::=
-{:System.out.println("RIDUCO PER FEpsilon");:};
+{::};
 
-G ::= MIN COIL PORT EQUAL I TYPE EQUAL I DIV MAX
-{:System.out.println("RIDUCO PER G");:};
+G ::= MIN COIL PORT EQUAL I:port TYPE EQUAL I:type DIV MAX
+{:
+	Coil coil=new Coil(port,type);
+	if(parser.getTableInput().containsKey(port))
+	 parser.handleError(parser.PORT_IS_INPUT_OR_OUTPUT);
+	else{
+	 if(!parser.getTableOutput().containsKey(port)){
+	 	parser.getTableOutput().put(coil.getPort(),coil);
+	 }
+	}
+
+:};
 
 
-N ::= VERSION {:System.out.println("RIDUCO PER N");:};
-I ::= NUM {:System.out.println("RIDUCO PER I");:};
-P ::= ENCODING {:System.out.println("RIDUCO PER P");:};
+N ::= VERSION:val {:RESULT=val;:};
+I ::= NUM:val {:RESULT=val;:};
+P ::= ENCODING:val {:RESULT=val;:};
 
 
