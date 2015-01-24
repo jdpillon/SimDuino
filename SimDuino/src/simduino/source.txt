@@ -2,24 +2,12 @@
 <programfor=1> 
  <rung>
 	<section1>
-		<contactfrom=0to=1port=0type=0/>
+		<contactfrom=0to=1port=1type=0/>
 		<contactfrom=1to=2port=2type=0/>
-		<contactfrom=1to=3port=5type=0/>
-		<contactfrom=0to=3port=3type=0/>
-		<contactfrom=2to=3port=4type=0/>
 	</section1>
 	<section2>
 		<coilport=10type=0/>
 	</section2>
  </rung>
- <rung>
-	<section1>
-		<contactfrom=0to=1port=0type=0/>
-		<contactfrom=1to=2port=2type=0/>
-	</section1>
-	<section2>
-		<coilport=1type=0/>
-	</section2>
-</rung>
 </program>
 

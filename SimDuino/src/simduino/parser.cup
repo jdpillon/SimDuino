@@ -95,7 +95,12 @@ S  ::= A
 		Map.Entry pairs = (Map.Entry)it.next();
         int i=(int)pairs.getKey();
         System.out.println("int pin"+i+"="+i+";");
-        System.out.println("int var"+i+"=0;");
+        if(((Coil)pairs.getValue()).getType()==0)
+        	System.out.println("int var"+i+"=LOW;");
+        else if(((Coil)pairs.getValue()).getType()==1)
+        	System.out.println("int var"+i+"=HIGH;");
+        else
+        	parser.handleError(parser.TYPE_IS_ONLY_0_OR_1);	
 	}
 
 
@@ -132,6 +137,11 @@ S  ::= A
 		if(!root.buildTree(0,maxTo)){
 			parser.handleError(parser.INVALID_LADDER_DIAGRAM);
 		}
+		/******DEBUG-PRINT TREE*******/
+		/*System.out.println("**************************************");
+		root.visit();
+		System.out.println("**************************************");*/
+
 		System.out.println("	if("+root.toString()+"){");
 		if(((Coil)((Rung)obj).getSection2()).getType()==0)
 			System.out.println("		"+"var"+((Coil)((Rung)obj).getSection2()).getPort()+"=HIGH;");
@@ -141,7 +151,9 @@ S  ::= A
 	}
 
 
-	/******DEBUG*****/
+	
+
+	/******DEBUG-PRINT RUNG*******/
 	/*System.out.println("**************************************");
 	Object obj;
 	it = parser.getRungList().iterator();
@@ -195,7 +207,9 @@ F ::= F:array MIN CONTACT FROM EQUAL I:from TO EQUAL I:to PORT EQUAL I:port TYPE
  	Contact contact=new Contact(from,to,port,type);
 	if(parser.getTableOutput().containsKey(port))
 	 parser.handleError(parser.PORT_IS_INPUT_OR_OUTPUT);
-	else{
+	else if(contact.getFrom()+1!=contact.getTo()){
+        parser.handleError(parser.INVALID_LADDER_DIAGRAM);         
+    }else{
 	 if(!parser.getTableInput().containsKey(port)){
 	 	parser.getTableInput().put(contact.getPort(),contact);
 	 }

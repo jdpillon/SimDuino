@@ -21,6 +21,17 @@ public class ContactNode {
     private boolean isRootNode;
     private Contact contact;
     
+    public int findMax_ToValue_FromContactList(Rung rung){
+		int max=0;
+		for(Contact cnt: rung.getSection1()){
+			if(cnt.getTo()>max){
+				max=cnt.getTo();
+			}
+		}
+		return max;
+    }
+
+    
     private ArrayList<Contact> findContactWithSource(Rung rung,int from){
         ArrayList<Contact> contact_found=new ArrayList<>();
 	for(Contact cnt: rung.getSection1()){
@@ -32,21 +43,31 @@ public class ContactNode {
     }
    
     public boolean buildTree(int from,int maxTo){
-       ArrayList<Contact> contact_found=new ArrayList<>();
+       ArrayList<Contact> contact_found;
        contact_found=findContactWithSource(rung,from);
        
-       if(!(contact_found.isEmpty()&&from<maxTo)){
-        for(Contact cnt:contact_found){
-            ContactNode child=new ContactNode(rung,cnt);
-            child_node.add(child);
-            if(!child.buildTree(from+1,maxTo))
-                return false;
-        }
-       }else{
-         return false;
+       if(from==0&&contact_found.isEmpty())
+           return false;
+       /****DEBUG****/
+       /*System.out.println("****");
+       for(Contact cnts:contact_found){
+        System.out.println("Contatti trovati per from:"+from);
        }
+       System.out.println("****");*/
+       /************/
        
-       return true;
+       if(!(contact_found.isEmpty())){
+          if(from<maxTo){
+            for(Contact cnt:contact_found){
+                ContactNode child=new ContactNode(rung,cnt);
+                child_node.add(child);
+                if(!child.buildTree(cnt.getTo(),maxTo))
+                    return false;
+            }
+          }else
+              return false;          
+       }
+              return true;
     }
    
     @Override
@@ -55,28 +76,53 @@ public class ContactNode {
      
      boolean isFirst=true;
      for(ContactNode cnt:child_node){
-            if(isFirst)
+            if(isFirst){
                 isFirst=false;
-            else{
+                str=str+"(";
+            }else{
                  str=str+"||";
             }
          if(!isRootNode){
             if(contact.getType()==0)
              str=str+cnt.toString()+"&&var"+String.valueOf(contact.getPort())+"==HIGH";
             else if(contact.getType()==1)
-             str=str+cnt.toString()+"&&var"+"!("+String.valueOf(contact.getPort())+"==HIGH)"; 
+             str=str+cnt.toString()+"&&!(var"+String.valueOf(contact.getPort())+"==HIGH)"; 
          }else{
             str=str+cnt.toString();
          }
      }
      
-     if(child_node.isEmpty()&&!isRootNode)
-         if(contact.getType()==0)
-            str="var"+String.valueOf(contact.getPort())+"==HIGH";
-         else if(contact.getType()==1)
-            str="!(var"+String.valueOf(contact.getPort())+"==HIGH)";
    
+     if(child_node.isEmpty()&&!isRootNode){
+         
+         if(this.findMax_ToValue_FromContactList(rung)!=contact.getTo()){
+             System.out.println("Inavalid Ladder Diagram");
+             System.exit(1);
+         }
+         
+         if(contact.getType()==0)
+            str=str+"var"+String.valueOf(contact.getPort())+"==HIGH";
+         else if(contact.getType()==1)
+            str=str+"!(var"+String.valueOf(contact.getPort())+"==HIGH)";
+     }else
+         str=str+")";
      return str;
+    }
+    
+    public void visit(){
+     for(ContactNode cnt:child_node){
+         cnt.visit();
+     }
+     
+     for(ContactNode cnt:child_node){
+         if(!isRootNode)
+            System.out.println("Node:"+this.contact.getTo()+"Child:"+cnt.contact.getTo());
+         else
+            System.out.println("Node:0 Child:"+cnt.contact.getTo());  
+     }
+     
+
+
     }
     
     public boolean isRootNode() {
