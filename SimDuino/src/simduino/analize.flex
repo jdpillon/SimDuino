@@ -1,3 +1,7 @@
+/*
+ * PROGETTO LINGUAGGI E TRADUTTORI
+ * Nunzio Meli,Simone Sorge,Alex Finocchiaro
+ */
 import java_cup.runtime.*;
 
 %%

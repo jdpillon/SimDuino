@@ -6,7 +6,7 @@
 		<contactfrom=1to=2port=2type=0/>
 	</section1>
 	<section2>
-		<coilport=10type=0/>
+		<coilport=10type=1/>
 	</section2>
  </rung>
 </program>

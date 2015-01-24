@@ -1,17 +1,15 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * PROGETTO LINGUAGGI E TRADUTTORI
+ * Nunzio Meli,Simone Sorge,Alex Finocchiaro
  */
 package simduino;
 
 import java.util.ArrayList;
-import java.util.Iterator;
-import java_cup.runtime.lr_parser;
 
 /**
- *
- * @author melix
+ * @author Meli Nunzio
+ * @author Sorge Simone
+ * @author Finocchiaro Alessandro
  */
 public class ContactNode {    
 
@@ -21,6 +19,14 @@ public class ContactNode {
     private boolean isRootNode;
     private Contact contact;
     
+    
+    
+    /****FUNZIONE: findMax_ToValue_FromContactList****/
+    /**
+    * Ciascun oggetto Contact ha un attributo from di tipo int
+    * trova il massimo valore dell'attributo from tra tutti i contatti
+    * presenti in un rung.
+    **/
     public int findMax_ToValue_FromContactList(Rung rung){
 		int max=0;
 		for(Contact cnt: rung.getSection1()){
@@ -31,7 +37,10 @@ public class ContactNode {
 		return max;
     }
 
-    
+    /****FUNZIONE: findContactWithSource****/
+    /**
+    * Trova tutti i contatti che hanno l'attributo from uguale a from.
+    **/
     private ArrayList<Contact> findContactWithSource(Rung rung,int from){
         ArrayList<Contact> contact_found=new ArrayList<>();
 	for(Contact cnt: rung.getSection1()){
@@ -42,6 +51,10 @@ public class ContactNode {
 	return contact_found;
     }
    
+    /****FUNZIONE: buildTree****/
+    /**
+    * Funzione che crea ricorsivamente l'albero dei contatti in un rung.
+    **/
     public boolean buildTree(int from,int maxTo){
        ArrayList<Contact> contact_found;
        contact_found=findContactWithSource(rung,from);
@@ -70,6 +83,13 @@ public class ContactNode {
               return true;
     }
    
+    
+     /****FUNZIONE: toString()****/
+    /**
+    * Funzione che ricorsivamente trova l'espressione logica corrispondente
+    * all'albero appena creato.
+    * Bisogna invocarla dopo aver costruito l'albero.
+    **/
     @Override
     public String toString(){
      String str="";
@@ -109,6 +129,12 @@ public class ContactNode {
      return str;
     }
     
+    
+   /****FUNZIONE: visit()****/
+    /**
+    * Funzione di visita depth-first dell'albero.
+    * Per ogni nodo dell'albero viene stampato il node e i nodi figli.
+    **/
     public void visit(){
      for(ContactNode cnt:child_node){
          cnt.visit();

@@ -6,8 +6,9 @@
 package simduino;
 
 /**
- *
- * @author melix
+ * @author Meli Nunzio
+ * @author Sorge Simone
+ * @author Finocchiaro Alessandro
  */
 public class Coil {
 

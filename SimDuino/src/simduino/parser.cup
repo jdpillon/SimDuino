@@ -1,3 +1,8 @@
+/*
+ * PROGETTO LINGUAGGI E TRADUTTORI
+ * Nunzio Meli,Simone Sorge,Alex Finocchiaro
+ */
+
 import java_cup.runtime.*;
 import simduino.Coil;
 import simduino.Contact;
@@ -12,14 +17,20 @@ import java.util.Iterator;
 
 parser code {:
 
+
+	/*****COSTANTI PER LA GESTIONE DEGLI ERRORI*****/
 	public final String PORT_IS_INPUT_OR_OUTPUT="Port is only input or output";
 	public final String TYPE_IS_ONLY_0_OR_1="Type is only 0 or 1";
 	public final String INVALID_LADDER_DIAGRAM="Invalid ladder diagram";
+	/**********/
 
-    private HashMap <Integer,Contact>tableInputPort=new HashMap<>();
-    private HashMap <Integer,Coil>tableOutputPort=new HashMap<>();
-    private ArrayList<Rung> rungList=new ArrayList<>();
+	/*****STRUTTURE DATI UTILIZZATE*****/
+    private HashMap <Integer,Contact>tableInputPort=new HashMap<>();	/*Contiene contatti ladder associati a pin di input (Chiave:Numero del pin di input)*/
+    private HashMap <Integer,Coil>tableOutputPort=new HashMap<>();		/*Contiene contatti ladder associati a pin di output (Chiave:Numero del pin di output)*/
+    private ArrayList<Rung> rungList=new ArrayList<>();					/*Lista di tutti gli HashMap*/
+    /**********/
 
+    /****METEODI GETTER AND SETTER PER OPERARE SULLE STRUTTURE DATI APPENA DICHIARATE****/
     public HashMap getTableInput(){
     	return tableInputPort;
     }
@@ -31,21 +42,33 @@ parser code {:
     public ArrayList<Rung> getRungList(){
     	return rungList;
     }
+	/**********/
 
 	public void report_error(String message,Object info){
-		System.out.println("Si e' verificato un errore!");
+		System.out.println("Syntax Error");
 	}
 
+    /****FUNZIONE: handleError(String message)****/
+    /**
+    * Stampa messaggi di errore e termina il programma di parsing
+    **/
 	public void handleError(String message){
 	 System.out.println(message);
 	 System.exit(1);
 	}
+	/**********/
 
 	public void report_fatal_error(String message,Object info){
 	 report_error(message,info);
 	 System.exit(1);
 	}
 
+    /****FUNZIONE: findMax_ToValue_FromContactList****/
+    /**
+    * Ciascun oggetto Contact ha un attributo from di tipo int
+    * trova il massimo valore dell'attributo from tra tutti i contatti
+    * presenti in un rung.
+    **/
 	public int findMax_ToValue_FromContactList(Rung rung){
 		int max=0;
 		for(Contact cnt: rung.getSection1()){
@@ -65,7 +88,7 @@ parser code {:
 
 
 
-/*----Declaration of Terminal e NonTerminal----*/
+/*----Dichiarazione Terminali e Non Terminali----*/
 
 terminal QUESTION,EQUAL,DIV,MIN,MAX,XML,PROGRAM,FOR,RUNG,SECTION1,SECTION2,CONTACT,FROM,TO,PORT,COIL,TYPE;
 terminal Integer NUM;
@@ -75,14 +98,20 @@ non terminal Object G,F,E,D,B,A,S;
 non terminal Integer I;
 non terminal String N,P;
 start with S;
-/*precedence left MIN,RUNG,MAX,DIV;*/
 
 
-/*Grammar Section*/
+/*Grammatica*/
 S  ::= A 
 {:
+	/*Questa azione semantica genera il codice in base alle informazioni raccolte precedentemente*/
     Iterator it;
 
+    /**
+    *Ogni contatto che appare in un programma ladder ha associato un valore dell'attributo port, che si riferisce 
+    *alla porta della scheda arduino di cui si deve leggere la tensione.
+    *Per ogni Contact nella HashMap TableInput, bisogna dichiarare nel programma target una variabile che 
+    *conterra il valore letto(chiamata "var"+port) e una che memorizzera la porta associata(chiamata "pin"+port).
+    **/
     it = parser.getTableInput().entrySet().iterator();
     while (it.hasNext()) {
         Map.Entry pairs = (Map.Entry)it.next();
@@ -90,20 +119,27 @@ S  ::= A
         System.out.println("int pin"+i+"="+i+";");
         System.out.println("int var"+i+"=0;");
     }
+    /**
+    *Ogni coil che appare in un programma ladder ha associato un valore dell'attributo port, che si riferisce 
+    *alla porta della scheda arduino in cui si deve settare la tensione.
+    *Per ogni Coil nella HashMap TableOutput, bisogna dichiarare nel programma target una variabile che 
+    *conterra il valore scritto(chiamata "var"+port) e una che memorizzera la porta associata(chiamata "pin"+port).
+    *
+    **/   
     it = parser.getTableOutput().entrySet().iterator();
     while (it.hasNext()) {
 		Map.Entry pairs = (Map.Entry)it.next();
         int i=(int)pairs.getKey();
         System.out.println("int pin"+i+"="+i+";");
-        if(((Coil)pairs.getValue()).getType()==0)
-        	System.out.println("int var"+i+"=LOW;");
-        else if(((Coil)pairs.getValue()).getType()==1)
-        	System.out.println("int var"+i+"=HIGH;");
-        else
-        	parser.handleError(parser.TYPE_IS_ONLY_0_OR_1);	
+        System.out.println("int var"+i+";");
 	}
 
-
+    /**
+    *Ogni programma arduino necessita di una funzione "setup()" per essere eseguito.
+    *Questa funzione viene eseguita solo all'avvio del programma.
+    *Precedentemente abbiamo associato un pin della scheda arduino ad ogni Contatto in TableInput
+    *adesso settiamo tale pin come pin di input, mediante la funzione "pinMode(args)."
+    **/   
     it = parser.getTableInput().entrySet().iterator();
     System.out.println("void setup(){");
     while (it.hasNext()) {
@@ -111,6 +147,10 @@ S  ::= A
         int i=(int)pairs.getKey();
         System.out.println("	pinMode("+"pin"+i+","+"INPUT"+");");
 	}
+	/**
+    *Per ogni Coil nella HashMap TableOutput, precedentemente abbiamo associato un pin della scheda arduino,
+    *adesso settiamo tale pin come pin di output, mediante la funzione "pinMode(args)."
+    **/  
 	it = parser.getTableOutput().entrySet().iterator();
 	while (it.hasNext()) {
 		Map.Entry pairs = (Map.Entry)it.next();
@@ -119,7 +159,16 @@ S  ::= A
 	}
 	System.out.println("}");
 
+    /**
+    *Ogni programma arduino necessita di una funzione "loop()" per essere eseguito.
+    *Questa funzione viene eseguita in continuazione e determina il program-scan
+    **/
 	System.out.println("void loop(){");
+
+	/**
+    *All'inizio del program scan eseguiamo la lettura di tutte le variabili di input
+    *tramite la funzione "digitalRead(args)";
+    **/
 	it = parser.getTableInput().entrySet().iterator();
     while (it.hasNext()) {
 		Map.Entry pairs = (Map.Entry)it.next();
@@ -128,6 +177,9 @@ S  ::= A
 	}
 
 
+	/**
+    *Per ogni rung creaiamo un albero che descrive i suoi contatti
+    **/
 	ContactNode root;
 	it = parser.getRungList().iterator();
 	while(it.hasNext()){
@@ -142,11 +194,20 @@ S  ::= A
 		root.visit();
 		System.out.println("**************************************");*/
 
+	/**
+    *Attraversando l'albero relativo a un particolare rung in modo depth-first
+    *otteniamo l'espressione logica relativa a un rung
+    **/
 		System.out.println("	if("+root.toString()+"){");
 		if(((Coil)((Rung)obj).getSection2()).getType()==0)
 			System.out.println("		"+"var"+((Coil)((Rung)obj).getSection2()).getPort()+"=HIGH;");
 		else if(((Coil)((Rung)obj).getSection2()).getType()==1)
 			System.out.println("		"+"var"+((Coil)((Rung)obj).getSection2()).getPort()+"=LOW;");
+		System.out.println("	}else{");
+		if(((Coil)((Rung)obj).getSection2()).getType()==0)
+			System.out.println("		"+"var"+((Coil)((Rung)obj).getSection2()).getPort()+"=LOW;");
+		else if(((Coil)((Rung)obj).getSection2()).getType()==1)
+			System.out.println("		"+"var"+((Coil)((Rung)obj).getSection2()).getPort()+"=HIGH;");
 		System.out.println("	}");
 	}
 
@@ -169,6 +230,10 @@ S  ::= A
 	}
 	System.out.println("**************************************");*/
 
+	/**
+    *Alla fine del program scan eseguiamo la scrittura di tutte le variabili di output
+    *tramite la funzione "digitalWrite(args)";
+    **/
 	it = parser.getTableOutput().entrySet().iterator();
     while (it.hasNext()) {
 		Map.Entry pairs = (Map.Entry)it.next();
@@ -193,6 +258,12 @@ D ::=
 
 E ::= MIN SECTION1 MAX F:section1 MIN DIV SECTION1 MAX MIN SECTION2 MAX G:section2 MIN DIV SECTION2 MAX
 {:
+	/**
+    *Ogni rung è diviso in due sezioni section1 e section2
+    *la section1 contiene solo contatti e la section2 solo un coil.
+    *Quando facciamo la riduzione per E il rung è completo, quindi possiamo
+    *creare un nuovo oggetto Rung e inserirlo nella RungList.
+    **/
  	Rung rung=new Rung((ArrayList<Contact>)section1,(Coil)section2);
  	parser.getRungList().add(rung);
 :};
@@ -200,10 +271,15 @@ E ::= MIN SECTION1 MAX F:section1 MIN DIV SECTION1 MAX MIN SECTION2 MAX G:sectio
 F ::= F:array MIN CONTACT FROM EQUAL I:from TO EQUAL I:to PORT EQUAL I:port TYPE EQUAL I:type DIV MAX
 {:
 
+
 	if(type!=0&&type!=1){
 		parser.handleError(parser.TYPE_IS_ONLY_0_OR_1);
 	}
 
+	/**
+    *Quando facciamo la riduzione per F abbiamo trovato un nuovo contatto in input
+    *Conserviamo le info relative a questo contatto inserendolo nella TableInput.
+    **/
  	Contact contact=new Contact(from,to,port,type);
 	if(parser.getTableOutput().containsKey(port))
 	 parser.handleError(parser.PORT_IS_INPUT_OR_OUTPUT);
@@ -215,6 +291,10 @@ F ::= F:array MIN CONTACT FROM EQUAL I:from TO EQUAL I:to PORT EQUAL I:port TYPE
 	 }
 	}
 
+	/**
+    *Qui invece conserviamo tutti i contatti relativi allo stesso rung 
+    *che costituiranno l'attributo section1 di F nella produzione E
+    **/
 	((ArrayList<Contact>)array).add(contact);
 
 	RESULT=array;
@@ -222,6 +302,10 @@ F ::= F:array MIN CONTACT FROM EQUAL I:from TO EQUAL I:to PORT EQUAL I:port TYPE
 
 F ::=
 {:
+	/**
+    *Se riduciamo per F stiamo iniziando il parsing di un nuovo rung
+    *Quindi bisogna allocare la struttura che contiene i suoi contatti.
+    **/
 	ArrayList<Contact> listContact;
 	listContact=new ArrayList<>();
 	RESULT=listContact;
@@ -234,6 +318,10 @@ G ::= MIN COIL PORT EQUAL I:port TYPE EQUAL I:type DIV MAX
 		parser.handleError(parser.TYPE_IS_ONLY_0_OR_1);
 	}
 
+	/**
+    *Quando facciamo la riduzione per G abbiamo trovato un coil in output
+    *Conserviamo le info relative a questo coil inserendolo nella TableOutput.
+    **/
 	Coil coil=new Coil(port,type);
 	if(parser.getTableInput().containsKey(port))
 	 parser.handleError(parser.PORT_IS_INPUT_OR_OUTPUT);

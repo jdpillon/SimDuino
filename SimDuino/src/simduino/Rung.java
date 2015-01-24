@@ -1,15 +1,15 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * PROGETTO LINGUAGGI E TRADUTTORI
+ * Nunzio Meli,Simone Sorge,Alex Finocchiaro
  */
 package simduino;
 
 import java.util.ArrayList;
 
 /**
- *
- * @author melix
+ * @author Meli Nunzio
+ * @author Sorge Simone
+ * @author Finocchiaro Alessandro
  */
 public class Rung {
 
