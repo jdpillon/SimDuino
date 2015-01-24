@@ -1,8 +1,11 @@
 import java_cup.runtime.*;
 import simduino.Coil;
 import simduino.Contact;
+import simduino.ContactNode;
+import simduino.Rung;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.Iterator;
 
 
@@ -10,9 +13,12 @@ import java.util.Iterator;
 parser code {:
 
 	public final String PORT_IS_INPUT_OR_OUTPUT="Port is only input or output";
+	public final String TYPE_IS_ONLY_0_OR_1="Type is only 0 or 1";
+	public final String INVALID_LADDER_DIAGRAM="Invalid ladder diagram";
 
     private HashMap <Integer,Contact>tableInputPort=new HashMap<>();
     private HashMap <Integer,Coil>tableOutputPort=new HashMap<>();
+    private ArrayList<Rung> rungList=new ArrayList<>();
 
     public HashMap getTableInput(){
     	return tableInputPort;
@@ -20,6 +26,10 @@ parser code {:
 
     public HashMap getTableOutput(){
     	return tableOutputPort;
+    }
+
+    public ArrayList<Rung> getRungList(){
+    	return rungList;
     }
 
 	public void report_error(String message,Object info){
@@ -35,6 +45,17 @@ parser code {:
 	 report_error(message,info);
 	 System.exit(1);
 	}
+
+	public int findMax_ToValue_FromContactList(Rung rung){
+		int max=0;
+		for(Contact cnt: rung.getSection1()){
+			if(cnt.getTo()>max){
+				max=cnt.getTo();
+			}
+		}
+		return max;
+	}
+
 
 	public void user_init() {
 
@@ -69,6 +90,13 @@ S  ::= A
         System.out.println("int pin"+i+"="+i+";");
         System.out.println("int var"+i+"=0;");
     }
+    it = parser.getTableOutput().entrySet().iterator();
+    while (it.hasNext()) {
+		Map.Entry pairs = (Map.Entry)it.next();
+        int i=(int)pairs.getKey();
+        System.out.println("int pin"+i+"="+i+";");
+        System.out.println("int var"+i+"=0;");
+	}
 
 
     it = parser.getTableInput().entrySet().iterator();
@@ -86,6 +114,56 @@ S  ::= A
 	}
 	System.out.println("}");
 
+	System.out.println("void loop(){");
+	it = parser.getTableInput().entrySet().iterator();
+    while (it.hasNext()) {
+		Map.Entry pairs = (Map.Entry)it.next();
+        int i=(int)pairs.getKey();
+        System.out.println("	var"+i+"=digitalRead("+"pin"+i+");");
+	}
+
+
+	ContactNode root;
+	it = parser.getRungList().iterator();
+	while(it.hasNext()){
+	    Object obj = it.next();
+		root=new ContactNode((Rung)obj);
+		int maxTo=parser.findMax_ToValue_FromContactList((Rung)obj);
+		if(!root.buildTree(0,maxTo)){
+			parser.handleError(parser.INVALID_LADDER_DIAGRAM);
+		}
+		System.out.println("	if("+root.toString()+"){");
+		if(((Coil)((Rung)obj).getSection2()).getType()==0)
+			System.out.println("		"+"var"+((Coil)((Rung)obj).getSection2()).getPort()+"=HIGH;");
+		else if(((Coil)((Rung)obj).getSection2()).getType()==1)
+			System.out.println("		"+"var"+((Coil)((Rung)obj).getSection2()).getPort()+"=LOW;");
+		System.out.println("	}");
+	}
+
+
+	/******DEBUG*****/
+	/*System.out.println("**************************************");
+	Object obj;
+	it = parser.getRungList().iterator();
+	while(it.hasNext()){
+    	obj = it.next();
+    	System.out.println("RUNG");
+    	Iterator itr = ((Rung)obj).getSection1().iterator();
+    	while(itr.hasNext()){
+    	 obj = itr.next();
+    	 System.out.println("CONTACT");
+    	}
+
+	}
+	System.out.println("**************************************");*/
+
+	it = parser.getTableOutput().entrySet().iterator();
+    while (it.hasNext()) {
+		Map.Entry pairs = (Map.Entry)it.next();
+        int i=(int)pairs.getKey();
+        System.out.println("	digitalWrite("+"pin"+i+","+"var"+i+");");
+	}
+	System.out.println("}");
 
 :};
 
@@ -101,11 +179,19 @@ D ::= D MIN RUNG MAX E MIN DIV RUNG MAX
 D ::=
 {: :};
 
-E ::= MIN SECTION1 MAX F MIN DIV SECTION1 MAX MIN SECTION2 MAX G MIN DIV SECTION2 MAX
-{::};
-
-F ::= F MIN CONTACT FROM EQUAL I:from TO EQUAL I:to PORT EQUAL I:port TYPE EQUAL I:type DIV MAX
+E ::= MIN SECTION1 MAX F:section1 MIN DIV SECTION1 MAX MIN SECTION2 MAX G:section2 MIN DIV SECTION2 MAX
 {:
+ 	Rung rung=new Rung((ArrayList<Contact>)section1,(Coil)section2);
+ 	parser.getRungList().add(rung);
+:};
+
+F ::= F:array MIN CONTACT FROM EQUAL I:from TO EQUAL I:to PORT EQUAL I:port TYPE EQUAL I:type DIV MAX
+{:
+
+	if(type!=0&&type!=1){
+		parser.handleError(parser.TYPE_IS_ONLY_0_OR_1);
+	}
+
  	Contact contact=new Contact(from,to,port,type);
 	if(parser.getTableOutput().containsKey(port))
 	 parser.handleError(parser.PORT_IS_INPUT_OR_OUTPUT);
@@ -114,13 +200,26 @@ F ::= F MIN CONTACT FROM EQUAL I:from TO EQUAL I:to PORT EQUAL I:port TYPE EQUAL
 	 	parser.getTableInput().put(contact.getPort(),contact);
 	 }
 	}
+
+	((ArrayList<Contact>)array).add(contact);
+
+	RESULT=array;
 :};
 
 F ::=
-{::};
+{:
+	ArrayList<Contact> listContact;
+	listContact=new ArrayList<>();
+	RESULT=listContact;
+:};
 
 G ::= MIN COIL PORT EQUAL I:port TYPE EQUAL I:type DIV MAX
 {:
+
+	if(type!=0&&type!=1){
+		parser.handleError(parser.TYPE_IS_ONLY_0_OR_1);
+	}
+
 	Coil coil=new Coil(port,type);
 	if(parser.getTableInput().containsKey(port))
 	 parser.handleError(parser.PORT_IS_INPUT_OR_OUTPUT);
@@ -129,7 +228,7 @@ G ::= MIN COIL PORT EQUAL I:port TYPE EQUAL I:type DIV MAX
 	 	parser.getTableOutput().put(coil.getPort(),coil);
 	 }
 	}
-
+	RESULT=coil;
 :};
 
 

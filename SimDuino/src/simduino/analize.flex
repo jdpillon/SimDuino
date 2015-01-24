@@ -17,7 +17,7 @@ private Symbol symbol(int type,Object value){
 %}
 
 LineTerminator=\r|\n|\r\n
-WhiteSpace={LineTerminator}|[\t\f]
+WhiteSpace={LineTerminator}|[ \t\f]
 num=0|[1-9][0-9]*
 version={num}"."[0-9]*
 encoding="UTF-8"|"UTF-16"
